@@ -1,7 +1,7 @@
 {
-  "name": "hapi-server",
+  "name": "auth-jwt",
   "version": "1.0.0",
-  "description": "Hapi Server",
+  "description": "Auth JWT",
   "main": "index.js",
   "dependencies": {
     "bluebird": "^3.5.1",
@@ -22,8 +22,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com:kikerios/hapi-server.git"
+    "url": "git+ssh://git@github.com:RojasJorge/auth-jwt.git"
   },
-  "author": "@kikerios <web.lrios@gmail.com>",
+  "author": "@RojasJorge",
   "license": "ISC"
 }

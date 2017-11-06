@@ -1,3 +1,3 @@
-# Hapi Server
+# Auth JWT
 
-with ❤ by [@kikerios](https://github.com/kikerios)
+with ❤ by [@RojasJorge](https://github.com/RojasJorge)
