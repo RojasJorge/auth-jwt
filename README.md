@@ -1,3 +1,5 @@
-# Auth JWT
+# Hapijs Auth JWT 2
 
-with ❤ by [@RojasJorge](https://github.com/RojasJorge)
+[@RojasJorge](https://github.com/RojasJorge)
+
+This is a base code for hapijs-auth v2
