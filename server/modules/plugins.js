@@ -1,3 +1,3 @@
 'use strict'
 
-module.exports = []
+module.exports = [{ register: require('hapi-auth-jwt2') }]
