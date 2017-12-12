@@ -5,6 +5,7 @@
 
 const config = require('../../config')
 const misc = require('../handlers/misc-handler')
+const _ = require('lodash')
 
 const Boom = require('boom')
 var JWT = require('jsonwebtoken')
@@ -44,6 +45,10 @@ const login = (request, reply) => {
 
         if (err) {
             Logger.error(err)
+            return reply({
+                status: 'error',
+                err
+            })
             return reply(Boom.badImplementation(err))
         }
 
@@ -57,9 +62,9 @@ const login = (request, reply) => {
 
             if (results.length <= 0) {
                 return reply({
-                    status: 'error',
+                    status: 'missing',
                     code: 204,
-                    msg: 'Usuario no registrado'
+                    msg: 'Credenciales inválidas'
                 })
             } else {
                 results.map((item) => {
@@ -77,7 +82,8 @@ const login = (request, reply) => {
                             user: {
                                 id: item.id,
                                 name: item.name,
-                                email: item.email
+                                email: item.email,
+                                scopes: item.scopes
                             },
                             token: token
                         })
@@ -102,7 +108,7 @@ const login = (request, reply) => {
  * User Add controller
  */
 
-const add = async(request, reply) => {
+const add = (request, reply) => {
 
     misc.user_exists(request, reply, request.payload.user.email, function(err) {
 
@@ -119,9 +125,13 @@ const add = async(request, reply) => {
             request.server.rethink.r.db('rapidito').table('users').insert({
                 name: request.payload.user.name,
                 email: request.payload.user.email,
-                passwd: hash
+                passwd: hash,
+                status: 1,
+                phones: request.payload.user.phones,
+                scopes: request.payload.user.scopes
             }).run(request.server.rethink.conn, (err, result) => {
                 if (err) {
+                    console.log(err)
                     throw err
                 }
                 console.log(result)
@@ -135,17 +145,86 @@ const add = async(request, reply) => {
     })
 }
 
-const all = (request, reply) => {
-    request.server.rethink.r.db('rapidito').table('users').run(request.server.rethink.conn, (err, result) => {
+const update = (request, reply) => {
+
+    let objectUpdated = {}
+
+    if (request.payload.user.name !== '-') {
+        objectUpdated.name = request.payload.user.name
+    }
+
+    if (request.payload.user.phones !== '-') {
+        objectUpdated.phones = request.payload.user.phones
+    }
+
+    if (request.payload.user.passwd !== '-') {
+        const hashUp = bcrypt.hashSync(request.payload.user.passwd, 10)
+        objectUpdated.passwd = hashUp
+    }
+
+    objectUpdated.scopes = request.payload.user.scopes
+
+    request.server.rethink.r.db('rapidito').table('users').get(request.payload.user.id).update(objectUpdated).run(request.server.rethink.conn, (err, result) => {
         if (err) {
             throw err
         }
-
-        reply({
+        return reply({
             status: 'success',
             code: 200,
-            msg: `${result.length} encontrado`,
-            data: result.toArray()
+            msg: 'Se han actualizado los datos correctamente',
+            data: result
+        })
+    })
+}
+
+const get = (request, reply) => {
+    request.server.rethink.r.db('rapidito').table('users').get(request.query.id).run(request.server.rethink.conn, (err, user) => {
+        if (err) {
+            throw err
+        }
+        return reply({
+            status: 'success',
+            code: 200,
+            msg: 'Usuario encontrado',
+            data: user
+        })
+    })
+}
+
+const all = (request, reply) => {
+
+    //Compare the user with the rates.
+    // request.server.rethink.r.db('rapidito').table('users').eqJoin('rate_id', request.server.rethink.r.db('rapidito').table('rates')).run(request.server.rethink.conn, (err, result) => {
+    //     if (err) {
+    //         throw err
+    //     }
+    //     reply({
+    //         status: 'success',
+    //         code: 200,
+    //         msg: `${result.length} encontrado`,
+    //         data: result.toArray()
+    //     })
+    // })
+
+    request.server.rethink.r.db('rapidito').table('users').filter(request.query || {}).run(request.server.rethink.conn, (err, users) => {
+        if (err) {
+            throw err
+        }
+        let usersList = []
+        users.toArray((err, user) => {
+            if (err) {
+                throw err
+            }
+            _.forEach(user, function(value) {
+                const omitPassword = _.omit(value, 'passwd')
+                usersList.push(omitPassword)
+            })
+            reply({
+                status: 'success',
+                code: 200,
+                msg: 'Listado completo de usuarios',
+                data: usersList
+            })
         })
     })
 }
@@ -154,5 +233,7 @@ module.exports = {
     all,
     login,
     add,
+    get,
+    update,
     validate
 }
